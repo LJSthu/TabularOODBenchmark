@@ -9,8 +9,7 @@ Here we provide the access links for datasets used in our benchmark.
 #### Taxi Dataset
 * Access link: 
   * https://www.kaggle.com/datasets/mnavas/taxi-routes-for-mexico-city-and-quito
-  * https://www.kaggle.com/competitions/nyc-taxi-trip-duration/data
-  *    
+  * https://www.kaggle.com/competitions/nyc-taxi-trip-duration/data    
 * Liscense: CC BY-SA 4.0
 
 
