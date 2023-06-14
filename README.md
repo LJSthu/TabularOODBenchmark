@@ -71,3 +71,7 @@ Here we provide the scripts to get data in our proposed settings.
   from get_data import get_USAccident
   X, y = get_USAccident('xgb', 'CA')
   ```
+
+
+
+ps: we modify the <a href="https://github.com/socialfoundations/folktables">`folktables`</a> code to support `year` before 2014, and therefore we involve it in our repo. 
