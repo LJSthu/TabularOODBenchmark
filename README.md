@@ -39,39 +39,54 @@ Here we provide the access links for the 5 datasets used in our benchmark.
 * License: CC BY-SA 4.0
 
 
-### 2. Get Data of Our Settings
+### 2. Python Package: `tabularoodbench`
 Here we provide the scripts to get data in our proposed settings.
 
-#### 2.1 For ACS Income, Public Coverage, Mobility
-* Import our `get_data.py` 
-* Using functions:
-  * `get_ACSIncome(method, state, year)`: get data for settings utilizing ACS Income dataset
-  * `get_ACSPubCov(method, state, year)`: get data for settings utilizing ACS Public Coverage dataset
-  * `get_ACSMobility(method, state, year)`: get data for settings utilizing ACS Mobility dataset
-* Support `state`: ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'PR']
-* Example:
+#### Install the package
+```
+pip3 install tabularoodbench
+```
 
-  ```python
-  from get_data import get_ACSIncome
-  X, y, features = get_ACSIncome('xgb', 'CA', 2018)
-  ```
-
-#### 2.2 For US Accident, Taxi
-* Run `preprocess.py` with `python3 preprocess.py --dir './dataset'`(default file dir)
-* Import our `get_data.py` 
-* Using functions:
-  * `get_USAccident(method, state)`: get data for settings utilizing US Accident dataset
-  * `get_taxi(method, state)`: get data for settings utilizing Taxi dataset
-* Support `state`:
-  * US Accident: ['CA', 'TX', 'FL', 'OR', 'MN', 'VA', 'SC', 'NY', 'PA', 'NC', 'TN', 'MI', 'MO']
-  * Taxi: ['bog', 'nyc', 'uio', 'mex']
-* Example:
-
-  ```python
-  from get_data import get_USAccident
-  X, y = get_USAccident('xgb', 'CA')
-  ```
+#### For settings utilizing ACS Income, Public Coverage, Mobility datasets
+  * `get_data(task, state, year, need_preprocess, root_dir)` function
+    * `task` values: 'income', 'pubcov', 'mobility'
+  * examples:
+    ```python
+    from tabularoodbench import get_data
+    # for ACS Income
+    X, y, feature_names = get_data("income", "CA", 2018, True, './datasets/acs/')
+    # for ACS Public Coverage
+    X, y, feature_names = get_data("pubcov", "CA", 2018, True, './datasets/acs/')
+    # for ACS Mobility
+    X, y, feature_names = get_data("mobility", "CA", 2018, True, './datasets/acs/')
+    ```
+  * support `state` values: 
+    * ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'PR']
 
 
+#### For settings utilizing US Accident, Taxi datasets
+  * download data files:
+    ```python
+    # US Accident:
+    https://www.kaggle.com/datasets/sobhanmoosavi/us-accidents
+    # Taxi
+    https://www.kaggle.com/competitions/nyc-taxi-trip-duration
+    ```
+  * put data files in dir `./datasets/`
+    * accident: `./datasets/Accident/US_Accidents_Dec21_updated.csv`
+    * taxi: `./datasets/Taxi/{city}_clean.csv`
+  * pass the `path to the data file` of `get_data` function
+  * example:
+    ```python
+    from tabularoodbench import get_data
+    # for US Accident
+    X, y = get_data("accident", "CA", True, './datasets/Accident/US_Accidents_Dec21_updated.csv')
+    # for Taxi
+    X, y = get_data("taxi", "CA", True, './datasets/Taxi/{city}_clean.csv')
+    ```
+  * support `state` values:
+    * for US Accident:  ['CA', 'TX', 'FL', 'OR', 'MN', 'VA', 'SC', 'NY', 'PA', 'NC', 'TN', 'MI', 'MO']
+    * for Taxi: ['nyc', 'bog', 'uio', 'mex']
 
-ps: we modify the <a href="https://github.com/socialfoundations/folktables">`folktables`</a> code to support `year` before 2014, and therefore we involve it in our repo. 
+
+ps: we modify the <a href="https://github.com/socialfoundations/folktables">`folktables`</a> code to support `year` before 2014, and therefore we involve it in our package. 
