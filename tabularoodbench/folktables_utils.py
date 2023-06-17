@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import functools
 from sklearn.model_selection import train_test_split
-import folktables
+from .folktables import adult_filter
 
 def flatten_list(list_of_lists):
         return functools.reduce(lambda x,y:x+y, list_of_lists)
@@ -117,7 +117,7 @@ def add_cow_indicators(t):
 
 
 def add_indicators(t):
-    folktables.adult_filter(t)
+    adult_filter(t)
     add_race_indicators(t)
     add_relp_indicators(t)
     add_school_indicators(t)
@@ -130,7 +130,7 @@ def add_indicators(t):
     return t
 
 def add_indicators_year(t):
-    folktables.adult_filter(t)
+    adult_filter(t)
     add_race_indicators(t)
     # add_relp_indicators(t)
     add_school_indicators(t)
@@ -139,14 +139,6 @@ def add_indicators_year(t):
     # add_military_indicators(t)
     # add_citizenship_indicators(t)
     # add_mobility_indicators(t)
-    return t
-
-def add_indicators_employ(t):
-    folktables.employment_filter(t)
-    add_race_indicators(t)
-    add_relp_indicators(t)
-    add_school_indicators(t)
-    add_married_indicator(t)
     return t
 
 def add_indicators_pubcov(t):

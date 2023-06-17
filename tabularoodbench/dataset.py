@@ -1,13 +1,13 @@
 import numpy as np
-import folktables_utils
-from folktables import ACSDataSource, ACSEmployment, ACSIncome, ACSPublicCoverage, ACSMobility, ACSTravelTime
-from folktables import BasicProblem
-import folktables
+from . import folktables_utils
+from .folktables import ACSDataSource, ACSEmployment, ACSIncome, ACSPublicCoverage, ACSMobility, ACSTravelTime
+from .folktables import BasicProblem
 import pandas as pd
 from sklearn import preprocessing
 import pickle
 from sklearn.preprocessing import StandardScaler
-from folktables_utils import add_indicators, add_indicators_year, add_indicators_pubcov, add_indicators_traveltime, add_indicators_mobility
+from .folktables_utils import add_indicators, add_indicators_year, add_indicators_pubcov, add_indicators_traveltime, add_indicators_mobility
+from .utils import preprocess
 
 rac1p_vals = ['white','black','am_ind','alaska','am_alaska','asian','hawaiian','other','two_or_more']
 relp_vals = ['reference', 'husband/wife','biologicalson','adoptedson','stepson','brother','father','grandchild','parentinlaw','soninlaw','other','roomer',
@@ -83,27 +83,33 @@ def mobility_filter(data):
     df = df[df["AGEP"] < 35]
     return df
 
-def get_USAccident(method, state):
-    # if not state in ['CA', 'TX', 'FL', 'OR', 'MN', 'VA', 'SC', 'NY', 'PA', 'NC', 'TN', 'MI', 'MO']:
-    #     raise NotImplementedError
-    data = pd.read_csv('./datasets/USAccident/%s.csv'%state)
+def get_USAccident(state, need_preprocess, root_dir='./datasets/USAccident/US_Accidents_Dec21_updated.csv'):
+    if not state in ['CA', 'TX', 'FL', 'OR', 'MN', 'VA', 'SC', 'NY', 'PA', 'NC', 'TN', 'MI', 'MO']:
+        raise NotImplementedError
+
+    raw_X = preprocess(root_dir)
+    data = raw_X[raw_X["State"]==state]
+
     y_sample = data["Severity"]
     X_sample = data.drop(["Severity", "State", "Start_Lat", "Start_Lng"], axis=1).values
 
-    if method in ['mlp', 'chi_dro', 'chi_doro', 'cvar_dro', 'cvar_doro', 'group_dro', 'lr', 'svm']:
+    if need_preprocess:
         scaler = StandardScaler()
         scaler.fit(X_sample)
         X_sample = scaler.transform(X_sample)
 
     # print(X_sample.shape, yq_sample.shape)
-    return X_sample, y_sample.to_numpy().astype('int')
+    return X_sample, y_sample.to_numpy().astype('int'), None
 
-def get_taxi(method, city):
+def get_taxi(city, need_preprocess,root_dir='./datasets/taxi/'):
 
     remove_col_nyc = ['id', 'pickup_latitude', 'pickup_longitude', 'dropoff_latitude', 'dropoff_longitude', 'passenger_count']
     remove_col_other = ['id', 'dist_meters', 'wait_sec', 'pickup_latitude', 'pickup_longitude', 'dropoff_latitude', 'dropoff_longitude']
 
-    df = pd.read_csv(f'./datasets/taxi/{city}_clean.csv')
+    try:
+        df = pd.read_csv('%s/{city}_clean.csv'%root_dir)
+    except:
+        print("Data file not found! Please download the data file and put it under %s" % root_dir)
     df = df[(df.trip_duration < 5900)]
     df = df[(df.pickup_longitude > -110)]
     df = df[(df.pickup_latitude < 50)]
@@ -183,17 +189,16 @@ def get_taxi(method, city):
 
     X_sample = df.to_numpy()
 
-    if method in ['mlp', 'chi_dro', 'chi_doro', 'cvar_dro', 'cvar_doro', 'group_dro', 'lr']:
+    if need_preprocess:
         scaler = StandardScaler()
         scaler.fit(X_sample)
         X_sample = scaler.transform(X_sample)
 
-    return X_sample, y_sample.to_numpy().astype('int')
+    return X_sample, y_sample.to_numpy().astype('int'), None
 
-
-def get_ACSIncome(method, state, year=2018):
+def get_ACSIncome(state, year=2018, need_preprocess=True, root_dir = './datasets/acs'):
     task = ACSIncome
-    data_source = ACSDataSource(root_dir='./datasets/acs', survey_year=year, horizon='1-Year', survey='person')
+    data_source = ACSDataSource(root_dir=root_dir, survey_year=year, horizon='1-Year', survey='person')
     source_data = data_source.get_data(states=[state], download=True)
     
     source_data = adult_filter(source_data)
@@ -208,19 +213,19 @@ def get_ACSIncome(method, state, year=2018):
 
     source_X_raw, source_y_raw, _ = new_task.df_to_numpy(source_data)
     
-    if method in METHOD_NEED_PREPROCESS:
+    if need_preprocess:
         scaler = StandardScaler()
         scaler.fit(source_X_raw[:,2:])
         source_X_raw[:,2:] = scaler.transform(source_X_raw[:,2:])
         
     return source_X_raw, source_y_raw.astype("int"), new_features
 
-def get_ACSIncome_aug(method, state, year=2018):
+def get_ACSIncome_aug(state, year=2018, need_preprocess=True, root_dir = './datasets/acs'):
     """
     Add features to mitigate the concept drifts
     """
     task = ACSIncome
-    data_source = ACSDataSource(root_dir='./datasets/acs', survey_year=year, horizon='1-Year', survey='person')
+    data_source = ACSDataSource(root_dir=root_dir, survey_year=year, horizon='1-Year', survey='person')
     source_data = data_source.get_data(states=[state], download=True)
     source_data = adult_filter(source_data)
     
@@ -235,16 +240,16 @@ def get_ACSIncome_aug(method, state, year=2018):
     source_X_raw, source_y_raw, _ = new_task.df_to_numpy(source_data)
     
     index = np.where(source_X_raw[:,-1]>2)[0]
-    if method in METHOD_NEED_PREPROCESS:
+    if need_preprocess:
         scaler = StandardScaler()
         scaler.fit(source_X_raw[:,1:])
         source_X_raw[:,1:] = scaler.transform(source_X_raw[:,1:])
 
     return source_X_raw, source_y_raw.astype("int"), new_features
 
-def get_ACSPubCov(method, state, year=2018):
+def get_ACSPubCov(state, year=2018, need_preprocess=True, root_dir = './datasets/acs'):
     task = ACSPublicCoverage
-    data_source = ACSDataSource(root_dir='./datasets/acs', survey_year=year, horizon='1-Year', survey='person')
+    data_source = ACSDataSource(root_dir=root_dir, survey_year=year, horizon='1-Year', survey='person')
     source_data = data_source.get_data(states=[state], download=False)
     
     source_data = public_coverage_filter(source_data)
@@ -260,19 +265,17 @@ def get_ACSPubCov(method, state, year=2018):
 
     source_X_raw, source_y_raw, _ = new_task.df_to_numpy(source_data)
     
-    if method in METHOD_NEED_PREPROCESS:
+    if need_preprocess:
         scaler = StandardScaler()
         scaler.fit(source_X_raw[:,2:])
         source_X_raw[:,2:] = scaler.transform(source_X_raw[:,2:])
         
-    return source_X_raw, source_y_raw.astype("int")
+    return source_X_raw, source_y_raw.astype("int"), new_features
 
-def get_ACSMobility(method, state, year=2018):
+def get_ACSMobility(state, year=2018, need_preprocess=True, root_dir = './datasets/acs'):
     task = ACSMobility
-    data_source = ACSDataSource(root_dir='./datasets/acs', survey_year=year, horizon='1-Year', survey='person')
+    data_source = ACSDataSource(root_dir=root_dir, survey_year=year, horizon='1-Year', survey='person')
     source_data = data_source.get_data(states=[state], download=False)
-    
-    
     
     source_data = mobility_filter(source_data)
     rac1p_vals = ['white','black','am_ind','alaska','am_alaska','asian','hawaiian','other','two_or_more']
@@ -288,11 +291,24 @@ def get_ACSMobility(method, state, year=2018):
 
     source_X_raw, source_y_raw, _ = new_task.df_to_numpy(source_data)
     
-    if method in METHOD_NEED_PREPROCESS:
+    if need_preprocess:
         scaler = StandardScaler()
         scaler.fit(source_X_raw[:,2:])
         source_X_raw[:,2:] = scaler.transform(source_X_raw[:,2:])
         
-    return source_X_raw, source_y_raw.astype("int")
+    return source_X_raw, source_y_raw.astype("int"), new_features
 
- 
+
+def get_data(task, state, need_preprocess, root_dir, year=2018):
+    if task == 'income':
+        return get_ACSIncome(state, year, need_preprocess, root_dir)
+    elif task == 'income_aug':
+        return get_ACSIncome_aug(state, year, need_preprocess, root_dir)
+    elif task == 'pubcov':
+        return get_ACSPubCov(state, year, need_preprocess, root_dir)
+    elif task == 'mobility':
+        return get_ACSMobility(state, year, need_preprocess, root_dir)
+    elif task == 'accident':
+        return get_USAccident(state, need_preprocess, root_dir)
+    elif task == 'taxi':
+        return get_taxi(state, need_preprocess, root_dir)

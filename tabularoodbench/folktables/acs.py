@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 
-import folktables
+from . import folktables
 from .load_acs import load_acs, load_definitions
 
 
